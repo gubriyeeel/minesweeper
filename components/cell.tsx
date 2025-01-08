@@ -6,6 +6,7 @@ interface CellProps {
   flagged: boolean;
   onReveal: () => void;
   onFlag: (e: React.MouseEvent) => void;
+  size?: number;
 }
 
 export function Cell({
@@ -14,6 +15,7 @@ export function Cell({
   flagged,
   onReveal,
   onFlag,
+  size = 10,
 }: CellProps) {
   const getCellContent = () => {
     if (flagged) return "🚩";
@@ -51,13 +53,22 @@ export function Cell({
     }
   };
 
+  // Adjust text size based on board size
+  const getTextSize = () => {
+    if (size <= 10) return "text-sm sm:text-base";
+    if (size <= 12) return "text-xs sm:text-sm";
+    return "text-xs";
+  };
+
   return (
-    <button
-      className={`w-8 h-8 flex items-center justify-center font-bold ${getCellColor()} ${getTextColor()} transition-colors duration-200`}
-      onClick={onReveal}
-      onContextMenu={onFlag}
-    >
-      {getCellContent()}
-    </button>
+    <div className="pt-[100%] relative w-full">
+      <button
+        className={`absolute inset-0 flex items-center justify-center font-bold ${getCellColor()} ${getTextColor()} ${getTextSize()} transition-colors duration-200`}
+        onClick={onReveal}
+        onContextMenu={onFlag}
+      >
+        {getCellContent()}
+      </button>
+    </div>
   );
 }

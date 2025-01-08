@@ -36,7 +36,7 @@ export default function Home() {
       <div className="min-h-screen flex flex-col items-center justify-center gap-4 p-4">
         <ThemeToggle />
 
-        <Card className="w-[400px]">
+        <Card className="w-full max-w-[400px]">
           <CardHeader>
             <CardTitle className="text-4xl text-center">Minesweeper</CardTitle>
           </CardHeader>
@@ -102,7 +102,7 @@ export default function Home() {
   }
 
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center p-8">
+    <div className="min-h-screen flex flex-col items-center justify-center p-4">
       <GameBoard
         size={size}
         difficulty={difficulty}
