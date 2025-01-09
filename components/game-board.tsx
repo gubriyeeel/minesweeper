@@ -1,11 +1,12 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { Cell } from "@/components/cell";
 import { Button } from "@/components/ui/button";
 import { useMinesweeper, Difficulty } from "@/hooks/use-minesweeper";
 import { GameResult } from "./game-result";
 import { cn } from "@/lib/utils";
+import { addLeaderboardEntry } from "./leaderboard";
 
 interface GameBoardProps {
   size: number;
@@ -25,20 +26,64 @@ export function GameBoard({ size, difficulty, onNewGame }: GameBoardProps) {
     toggleFlag,
   } = useMinesweeper(size, difficulty);
 
+  const [showResult, setShowResult] = useState(false);
+  const [gameTime, setGameTime] = useState(0);
+  const [isPlaying, setIsPlaying] = useState(false);
+  const timerRef = useRef<NodeJS.Timeout>(null);
+
+  // Start timer on first move
+  useEffect(() => {
+    const hasStarted = revealed.some((row) => row.some((cell) => cell));
+    if (hasStarted && !gameOver && !isPlaying) {
+      setIsPlaying(true);
+    }
+  }, [revealed, gameOver, isPlaying]);
+
+  // Handle timer
+  useEffect(() => {
+    if (isPlaying && !gameOver) {
+      timerRef.current = setInterval(() => {
+        setGameTime((prev) => prev + 1);
+      }, 1000);
+    }
+
+    return () => {
+      if (timerRef.current) {
+        clearInterval(timerRef.current);
+      }
+    };
+  }, [isPlaying, gameOver]);
+
   // Show dialog when game ends
   useEffect(() => {
     if (gameOver) {
+      if (timerRef.current) {
+        clearInterval(timerRef.current);
+      }
+
+      // If won, add to leaderboard
+      if (win) {
+        const playerName =
+          localStorage.getItem("minesweeper-player-name") || "Anonymous";
+        addLeaderboardEntry({
+          name: playerName,
+          time: gameTime,
+          difficulty,
+          boardSize: size,
+        });
+      }
+
       const timer = setTimeout(() => {
         setShowResult(true);
-      }, 500); // Small delay to show the final board state
+      }, 500);
       return () => clearTimeout(timer);
     }
-  }, [gameOver]);
-
-  const [showResult, setShowResult] = useState(false);
+  }, [gameOver, win, gameTime, difficulty, size]);
 
   const handleNewGame = () => {
     setShowResult(false);
+    setGameTime(0);
+    setIsPlaying(false);
     initializeGame();
   };
 
@@ -57,12 +102,21 @@ export function GameBoard({ size, difficulty, onNewGame }: GameBoardProps) {
     return "max-w-[600px]";
   };
 
+  function formatTime(time: number): string {
+    const minutes = Math.floor(time / 60);
+    const seconds = time % 60;
+    return `${minutes}:${seconds.toString().padStart(2, "0")}`;
+  }
+
   return (
-    <div className={cn("flex flex-col items-center gap-4 w-full", getMaxWidth())}>
-      <div className="flex gap-4 mb-4 items-center">
+    <div
+      className={cn("flex flex-col items-center gap-4 w-full", getMaxWidth())}
+    >
+      <div className="flex justify-between w-full items-center">
         <Button onClick={handleMainMenu} variant="outline">
           Main Menu
         </Button>
+        <div className="text-lg font-mono">{formatTime(gameTime)}</div>
       </div>
 
       <div className="w-full aspect-square relative">
@@ -101,6 +155,7 @@ export function GameBoard({ size, difficulty, onNewGame }: GameBoardProps) {
         onNewGame={handleNewGame}
         onMainMenu={handleMainMenu}
         difficulty={difficulty}
+        time={gameTime}
       />
     </div>
   );

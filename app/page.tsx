@@ -14,12 +14,16 @@ import {
 } from "@/components/ui/select";
 import { TutorialDialog } from "@/components/tutorial-dialog";
 import { ThemeToggle } from "@/components/theme-toggle";
+import { NameDialog } from "@/components/name-dialog";
+import { Leaderboard } from "@/components/leaderboard";
 
 export default function Home() {
   const [gameStarted, setGameStarted] = useState(false);
   const [size, setSize] = useState(10);
   const [difficulty, setDifficulty] = useState<Difficulty>("medium");
   const [showTutorial, setShowTutorial] = useState(false);
+  const [showNameDialog, setShowNameDialog] = useState(false);
+  const [showLeaderboard, setShowLeaderboard] = useState(false);
 
   useEffect(() => {
     // Check if the user has completed the tutorial before
@@ -29,7 +33,22 @@ export default function Home() {
     if (!tutorialCompleted) {
       setShowTutorial(true);
     }
+
+    // Check if user has set their name
+    const playerName = localStorage.getItem("minesweeper-player-name");
+    if (!playerName) {
+      setShowNameDialog(true);
+    }
   }, []);
+
+  const handleStartGame = () => {
+    const playerName = localStorage.getItem("minesweeper-player-name");
+    if (!playerName) {
+      setShowNameDialog(true);
+    } else {
+      setGameStarted(true);
+    }
+  };
 
   if (!gameStarted) {
     return (
@@ -78,25 +97,36 @@ export default function Home() {
             </div>
 
             <div className="space-y-4">
-              <Button
-                onClick={() => setGameStarted(true)}
-                className="w-full"
-                size="lg"
-              >
+              <Button onClick={handleStartGame} className="w-full" size="lg">
                 Start Game
               </Button>
-              <Button
-                onClick={() => setShowTutorial(true)}
-                variant="outline"
-                className="w-full"
-              >
-                How to Play
-              </Button>
+              <div className="flex gap-2">
+                <Button
+                  onClick={() => setShowTutorial(true)}
+                  variant="outline"
+                  className="w-full"
+                >
+                  How to Play
+                </Button>
+                <Button
+                  onClick={() => setShowLeaderboard(true)}
+                  variant="outline"
+                  className="w-full"
+                >
+                  Leaderboard
+                </Button>
+              </div>
             </div>
           </CardContent>
         </Card>
 
         <TutorialDialog open={showTutorial} onOpenChange={setShowTutorial} />
+        <NameDialog
+          open={showNameDialog}
+          onOpenChange={setShowNameDialog}
+          onSubmit={() => setGameStarted(true)}
+        />
+        <Leaderboard open={showLeaderboard} onOpenChange={setShowLeaderboard} />
       </div>
     );
   }

@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import { useMediaQuery } from "@/hooks/use-media-query";
 import { Button } from "@/components/ui/button";
 import {
@@ -19,6 +20,7 @@ import {
   DrawerTitle,
 } from "@/components/ui/drawer";
 import type { Difficulty } from "@/hooks/use-minesweeper";
+import { Leaderboard } from "./leaderboard";
 
 const getResultMessage = (isWin: boolean, difficulty: Difficulty) => {
   if (isWin) {
@@ -85,6 +87,7 @@ interface GameResultProps {
   onNewGame: () => void;
   onMainMenu: () => void;
   difficulty: Difficulty;
+  time: number;
 }
 
 export function GameResult({
@@ -94,9 +97,17 @@ export function GameResult({
   onNewGame,
   onMainMenu,
   difficulty,
+  time,
 }: GameResultProps) {
   const isDesktop = useMediaQuery("(min-width: 768px)");
   const resultMessage = getResultMessage(isWin, difficulty);
+  const [showLeaderboard, setShowLeaderboard] = useState(false);
+
+  function formatTime(time: number): string {
+    const minutes = Math.floor(time / 60);
+    const seconds = time % 60;
+    return `${minutes}:${seconds.toString().padStart(2, "0")}`;
+  }
 
   const content = (
     <div className="grid gap-4 py-4">
@@ -109,6 +120,9 @@ export function GameResult({
           <p className="text-center text-muted-foreground">
             {resultMessage.description}
           </p>
+          {isWin && (
+            <p className="text-lg font-mono mt-2">Time: {formatTime(time)}</p>
+          )}
         </div>
         <div className="flex gap-2">
           <Button onClick={onNewGame} variant="secondary">
@@ -116,40 +130,57 @@ export function GameResult({
           </Button>
           <Button onClick={onMainMenu}>Main Menu</Button>
         </div>
+        {isWin && (
+          <Button
+            onClick={() => setShowLeaderboard(true)}
+            variant="outline"
+            className="mt-2"
+          >
+            View Leaderboard
+          </Button>
+        )}
       </div>
     </div>
   );
 
   if (isDesktop) {
     return (
-      <Dialog open={open} onOpenChange={onOpenChange}>
-        <DialogContent className="sm:max-w-[425px]">
-          <DialogHeader>
-            <DialogTitle className="text-center"></DialogTitle>
-            <DialogDescription className="text-center"></DialogDescription>
-          </DialogHeader>
-          {content}
-        </DialogContent>
-      </Dialog>
+      <>
+        <Dialog open={open} onOpenChange={onOpenChange}>
+          <DialogContent className="sm:max-w-[425px]">
+            <DialogHeader>
+              <DialogTitle className="text-center"></DialogTitle>
+              <DialogDescription className="text-center"></DialogDescription>
+            </DialogHeader>
+            {content}
+          </DialogContent>
+        </Dialog>
+
+        <Leaderboard open={showLeaderboard} onOpenChange={setShowLeaderboard} />
+      </>
     );
   }
 
   return (
-    <Drawer open={open} onOpenChange={onOpenChange}>
-      <DrawerContent>
-        <DrawerHeader className="text-center">
-          <DrawerTitle></DrawerTitle>
-          <DrawerDescription></DrawerDescription>
-        </DrawerHeader>
-        {content}
-        <DrawerFooter className="pt-2">
-          <DrawerClose asChild>
-            <Button variant="outline" onClick={onMainMenu}>
-              Close
-            </Button>
-          </DrawerClose>
-        </DrawerFooter>
-      </DrawerContent>
-    </Drawer>
+    <>
+      <Drawer open={open} onOpenChange={onOpenChange}>
+        <DrawerContent>
+          <DrawerHeader className="text-center">
+            <DrawerTitle></DrawerTitle>
+            <DrawerDescription></DrawerDescription>
+          </DrawerHeader>
+          {content}
+          <DrawerFooter className="pt-2">
+            <DrawerClose asChild>
+              <Button variant="outline" onClick={onMainMenu}>
+                Close
+              </Button>
+            </DrawerClose>
+          </DrawerFooter>
+        </DrawerContent>
+      </Drawer>
+
+      <Leaderboard open={showLeaderboard} onOpenChange={setShowLeaderboard} />
+    </>
   );
 }
