@@ -56,19 +56,27 @@ const TUTORIAL_STEPS = [
       <div className="space-y-4">
         <p className="flex items-center gap-2">
           <span>👶</span>
-          <span><strong>Easy:</strong> 10% mines - Perfect for beginners</span>
+          <span>
+            <strong>Easy:</strong> 10% mines - Perfect for beginners
+          </span>
         </p>
         <p className="flex items-center gap-2">
           <span>😎</span>
-          <span><strong>Medium:</strong> 15% mines - For experienced players</span>
+          <span>
+            <strong>Medium:</strong> 15% mines - For experienced players
+          </span>
         </p>
         <p className="flex items-center gap-2">
           <span>🔥</span>
-          <span><strong>Hard:</strong> 20% mines - For the brave</span>
+          <span>
+            <strong>Hard:</strong> 20% mines - For the brave
+          </span>
         </p>
         <p className="flex items-center gap-2">
           <span>💀</span>
-          <span><strong>Impossible:</strong> 25% mines - For true masters</span>
+          <span>
+            <strong>Impossible:</strong> 25% mines - For true masters
+          </span>
         </p>
       </div>
     ),
@@ -81,9 +89,15 @@ interface TutorialDialogProps {
 }
 
 export function TutorialDialog({ open, onOpenChange }: TutorialDialogProps) {
-  const isDesktop = useMediaQuery("(min-width: 768px)");
   const [currentStep, setCurrentStep] = useState(0);
-  const [dontShowAgain, setDontShowAgain] = useState(false);
+  const [dontShowAgain, setDontShowAgain] = useState(() => {
+    // Initialize from localStorage
+    if (typeof window !== "undefined") {
+      return localStorage.getItem("minesweeper-tutorial-completed") === "true";
+    }
+    return false;
+  });
+  const isDesktop = useMediaQuery("(min-width: 768px)");
 
   const handleNext = () => {
     if (currentStep < TUTORIAL_STEPS.length - 1) {
@@ -113,14 +127,21 @@ export function TutorialDialog({ open, onOpenChange }: TutorialDialogProps) {
   const content = (
     <div className="grid gap-4 py-4">
       {currentTutorial.content}
-      <div className="flex items-center space-x-2 pt-4">
+      <div className="flex items-center space-x-2">
         <Checkbox
-          id="dontShowAgain"
+          id="dont-show"
           checked={dontShowAgain}
-          onCheckedChange={(checked) => setDontShowAgain(checked as boolean)}
+          onCheckedChange={(checked) => {
+            setDontShowAgain(checked === true);
+            if (checked) {
+              localStorage.setItem("minesweeper-tutorial-completed", "true");
+            } else {
+              localStorage.removeItem("minesweeper-tutorial-completed");
+            }
+          }}
         />
         <label
-          htmlFor="dontShowAgain"
+          htmlFor="dont-show"
           className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
         >
           Don&apos;t show this again
