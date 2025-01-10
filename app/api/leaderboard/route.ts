@@ -13,9 +13,15 @@ export async function GET(request: Request) {
   try {
     const { searchParams } = new URL(request.url);
     const difficulty = searchParams.get("difficulty");
+    const boardSize = searchParams.get("boardSize");
 
     const entries = await prisma.leaderboard.findMany({
-      where: difficulty ? { difficulty } : undefined,
+      where: {
+        AND: [
+          difficulty ? { difficulty } : {},
+          boardSize ? { boardSize: parseInt(boardSize) } : {},
+        ],
+      },
       orderBy: { time: "asc" },
       take: 10,
     });

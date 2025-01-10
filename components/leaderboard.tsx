@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useMediaQuery } from "@/hooks/use-media-query";
 import {
   Dialog,
   DialogContent,
@@ -8,52 +9,18 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
+  Drawer,
+  DrawerContent,
+  DrawerHeader,
+  DrawerTitle,
+  DrawerFooter,
+} from "@/components/ui/drawer";
+
+import { Trophy } from "lucide-react";
 import type { Difficulty } from "@/hooks/use-minesweeper";
-
-export interface LeaderboardEntry {
-  id: string;
-  name: string;
-  time: number;
-  difficulty: Difficulty;
-  boardSize: number;
-  date: string;
-}
-
-function formatTime(time: number): string {
-  const minutes = Math.floor(time / 60);
-  const seconds = time % 60;
-  return `${minutes}:${seconds.toString().padStart(2, "0")}`;
-}
-
-export async function addLeaderboardEntry(
-  entry: Omit<LeaderboardEntry, "id" | "date">
-) {
-  try {
-    const response = await fetch("/api/leaderboard", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify(entry),
-    });
-
-    if (!response.ok) {
-      throw new Error("Failed to add leaderboard entry");
-    }
-
-    return await response.json();
-  } catch (error) {
-    console.error("Error adding leaderboard entry:", error);
-    return null;
-  }
-}
+import { Board } from "@/components/board";
+import { getLeaderboard } from "@/actions/leaderboard";
+import type { LeaderboardEntry } from "@/types/leaderboard";
 
 interface LeaderboardProps {
   open: boolean;
@@ -64,7 +31,10 @@ export function Leaderboard({ open, onOpenChange }: LeaderboardProps) {
   const [entries, setEntries] = useState<LeaderboardEntry[]>([]);
   const [selectedDifficulty, setSelectedDifficulty] =
     useState<Difficulty>("medium");
+  const [selectedSize, setSelectedSize] = useState<number>(10);
   const [isLoading, setIsLoading] = useState(false);
+
+  const isMobile = useMediaQuery("(max-width: 640px)");
 
   useEffect(() => {
     async function fetchLeaderboard() {
@@ -72,13 +42,8 @@ export function Leaderboard({ open, onOpenChange }: LeaderboardProps) {
 
       setIsLoading(true);
       try {
-        const response = await fetch(
-          `/api/leaderboard?difficulty=${selectedDifficulty}`
-        );
-        if (response.ok) {
-          const data = await response.json();
-          setEntries(data);
-        }
+        const data = await getLeaderboard(selectedDifficulty, selectedSize);
+        setEntries(data);
       } catch (error) {
         console.error("Error fetching leaderboard:", error);
       } finally {
@@ -87,72 +52,58 @@ export function Leaderboard({ open, onOpenChange }: LeaderboardProps) {
     }
 
     fetchLeaderboard();
-  }, [open, selectedDifficulty]);
+  }, [open, selectedDifficulty, selectedSize]);
+
+  if (isMobile) {
+    return (
+      <Drawer open={open} onOpenChange={onOpenChange}>
+        <DrawerContent>
+          <DrawerHeader className="text-center">
+            <DrawerTitle className="flex items-center justify-center gap-2 text-2xl font-bold">
+              <Trophy className="h-6 w-6 text-yellow-500" />
+              Leaderboard
+            </DrawerTitle>
+          </DrawerHeader>
+          <div className="px-4">
+            <Board
+              selectedDifficulty={selectedDifficulty}
+              setSelectedDifficulty={setSelectedDifficulty}
+              selectedSize={selectedSize}
+              setSelectedSize={setSelectedSize}
+              entries={entries}
+              isLoading={isLoading}
+            />
+          </div>
+          <DrawerFooter className="pt-2">
+            <button
+              onClick={() => onOpenChange(false)}
+              className="w-full rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground"
+            >
+              Close
+            </button>
+          </DrawerFooter>
+        </DrawerContent>
+      </Drawer>
+    );
+  }
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[600px]">
+      <DialogContent className="sm:max-w-[700px]">
         <DialogHeader>
-          <DialogTitle className="text-center mb-4">Leaderboard 🏆</DialogTitle>
+          <DialogTitle className="flex items-center justify-center gap-2 text-2xl font-bold">
+            <Trophy className="h-6 w-6 text-yellow-500" />
+            Leaderboard
+          </DialogTitle>
         </DialogHeader>
-
-        <div className="space-y-4">
-          <div className="flex justify-center gap-2">
-            {["easy", "medium", "hard", "impossible"].map((diff) => (
-              <button
-                key={diff}
-                onClick={() => setSelectedDifficulty(diff as Difficulty)}
-                className={`px-3 py-1 rounded-md text-sm ${
-                  selectedDifficulty === diff
-                    ? "bg-primary text-primary-foreground"
-                    : "bg-secondary hover:bg-secondary/80"
-                }`}
-              >
-                {diff.charAt(0).toUpperCase() + diff.slice(1)}
-              </button>
-            ))}
-          </div>
-
-          {isLoading ? (
-            <div className="text-center py-8">Loading...</div>
-          ) : entries.length > 0 ? (
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead className="w-12 text-center">#</TableHead>
-                  <TableHead>Name</TableHead>
-                  <TableHead>Time</TableHead>
-                  <TableHead>Board Size</TableHead>
-                  <TableHead className="text-right">Date</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {entries.map((entry, index) => (
-                  <TableRow key={entry.id}>
-                    <TableCell className="text-center font-medium">
-                      {index + 1}
-                    </TableCell>
-                    <TableCell>{entry.name}</TableCell>
-                    <TableCell>{formatTime(entry.time)}</TableCell>
-                    <TableCell>
-                      {entry.boardSize}x{entry.boardSize}
-                    </TableCell>
-                    <TableCell className="text-right">
-                      {new Date(entry.date).toLocaleDateString() +
-                        ", " +
-                        new Date(entry.date).toLocaleTimeString()}
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          ) : (
-            <div className="text-center text-muted-foreground py-8">
-              No scores yet for {selectedDifficulty} difficulty. Keep playing to
-              set some records!
-            </div>
-          )}
-        </div>
+        <Board
+          selectedDifficulty={selectedDifficulty}
+          setSelectedDifficulty={setSelectedDifficulty}
+          selectedSize={selectedSize}
+          setSelectedSize={setSelectedSize}
+          entries={entries}
+          isLoading={isLoading}
+        />
       </DialogContent>
     </Dialog>
   );

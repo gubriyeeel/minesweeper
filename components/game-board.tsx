@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { useMinesweeper, Difficulty } from "@/hooks/use-minesweeper";
 import { GameResult } from "./game-result";
 import { cn } from "@/lib/utils";
-import { addLeaderboardEntry } from "./leaderboard";
+import { addLeaderboardEntry } from "@/actions/leaderboard";
 
 interface GameBoardProps {
   size: number;
