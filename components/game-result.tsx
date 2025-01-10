@@ -27,13 +27,13 @@ const getResultMessage = (isWin: boolean, difficulty: Difficulty) => {
     switch (difficulty) {
       case "easy":
         return {
-          title: "Baby Steps! 👶",
+          title: "Baby steps! 👶",
           description:
             "Well done... on the easiest difficulty. Ready to take off the training wheels?",
         };
       case "medium":
         return {
-          title: "Not Bad! 😎",
+          title: "Not bad! 😎",
           description:
             "You're getting there! Time to step up to the real challenge?",
         };
@@ -56,7 +56,7 @@ const getResultMessage = (isWin: boolean, difficulty: Difficulty) => {
         return {
           title: "Really? 😅",
           description:
-            "It's called 'Easy' for a reason... Maybe try Solitaire?",
+            "It's called 'easy' for a reason... Maybe try solitaire?",
         };
       case "medium":
         return {
